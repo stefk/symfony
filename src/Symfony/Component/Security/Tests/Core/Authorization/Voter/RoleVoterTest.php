@@ -39,6 +39,7 @@ class RoleVoterTest extends \PHPUnit_Framework_TestCase
         return array(
             array(array(), array(), VoterInterface::ACCESS_ABSTAIN),
             array(array(), array('FOO'), VoterInterface::ACCESS_ABSTAIN),
+            array(array(), array(new \stdClass()), VoterInterface::ACCESS_ABSTAIN),
             array(array(), array('ROLE_FOO'), VoterInterface::ACCESS_DENIED),
             array(array('ROLE_FOO'), array('ROLE_FOO'), VoterInterface::ACCESS_GRANTED),
             array(array('ROLE_FOO'), array('FOO', 'ROLE_FOO'), VoterInterface::ACCESS_GRANTED),
