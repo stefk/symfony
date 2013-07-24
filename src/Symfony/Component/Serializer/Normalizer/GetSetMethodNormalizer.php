@@ -38,6 +38,7 @@ class GetSetMethodNormalizer extends SerializerAwareNormalizer implements Normal
 {
     protected $callbacks = array();
     protected $ignoredAttributes = array();
+    protected $camelizedAttributes = array();
 
     /**
      * Set normalization callbacks
@@ -67,9 +68,19 @@ class GetSetMethodNormalizer extends SerializerAwareNormalizer implements Normal
     }
 
     /**
+     * Set attributes to be camelized on denormalize
+     *
+     * @param array $camelizedAttributes
+     */
+    public function setCamelizedAttributes(array $camelizedAttributes)
+    {
+        $this->camelizedAttributes = $camelizedAttributes;
+    }
+
+    /**
      * {@inheritdoc}
      */
-    public function normalize($object, $format = null)
+    public function normalize($object, $format = null, array $context = array())
     {
         $reflectionObject = new \ReflectionObject($object);
         $reflectionMethods = $reflectionObject->getMethods(\ReflectionMethod::IS_PUBLIC);
@@ -101,7 +112,7 @@ class GetSetMethodNormalizer extends SerializerAwareNormalizer implements Normal
     /**
      * {@inheritdoc}
      */
-    public function denormalize($data, $class, $format = null)
+    public function denormalize($data, $class, $format = null, array $context = array())
     {
         $reflectionClass = new \ReflectionClass($class);
         $constructor = $reflectionClass->getConstructor();
@@ -111,7 +122,7 @@ class GetSetMethodNormalizer extends SerializerAwareNormalizer implements Normal
 
             $params = array();
             foreach ($constructorParameters as $constructorParameter) {
-                $paramName = lcfirst($constructorParameter->name);
+                $paramName = lcfirst($this->formatAttribute($constructorParameter->name));
 
                 if (isset($data[$paramName])) {
                     $params[] = $data[$paramName];
@@ -132,13 +143,35 @@ class GetSetMethodNormalizer extends SerializerAwareNormalizer implements Normal
         }
 
         foreach ($data as $attribute => $value) {
-            $setter = 'set'.$attribute;
+            $setter = 'set'.$this->formatAttribute($attribute);
+
             if (method_exists($object, $setter)) {
                 $object->$setter($value);
             }
         }
 
         return $object;
+    }
+
+    /**
+     * Format attribute name to access parameters or methods
+     * As option, if attribute name is found on camelizedAttributes array
+     * returns attribute name in camelcase format
+     *
+     * @param string $attributeName
+     * @return string
+     */
+    protected function formatAttribute($attributeName)
+    {
+        if (in_array($attributeName, $this->camelizedAttributes)) {
+            return preg_replace_callback(
+                '/(^|_|\.)+(.)/', function ($match) {
+                    return ('.' === $match[1] ? '_' : '').strtoupper($match[2]);
+                }, $attributeName
+            );
+        }
+
+        return $attributeName;
     }
 
     /**

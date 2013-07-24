@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\HttpKernel\EventListener;
 
-use Symfony\Component\HttpKernel\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Log\DebugLoggerInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -27,8 +27,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class ExceptionListener implements EventSubscriberInterface
 {
-    private $controller;
-    private $logger;
+    protected $controller;
+    protected $logger;
 
     public function __construct($controller, LoggerInterface $logger = null)
     {
@@ -69,7 +69,7 @@ class ExceptionListener implements EventSubscriberInterface
             // set handling to false otherwise it wont be able to handle further more
             $handling = false;
 
-            // re-throw the exception as this is a catch-all
+            // re-throw the exception from within HttpKernel as this is a catch-all
             return;
         }
 
@@ -95,11 +95,12 @@ class ExceptionListener implements EventSubscriberInterface
     protected function logException(\Exception $exception, $message, $original = true)
     {
         $isCritical = !$exception instanceof HttpExceptionInterface || $exception->getStatusCode() >= 500;
+        $context = array('exception' => $exception);
         if (null !== $this->logger) {
             if ($isCritical) {
-                $this->logger->crit($message);
+                $this->logger->critical($message, $context);
             } else {
-                $this->logger->err($message);
+                $this->logger->error($message, $context);
             }
         } elseif (!$original || $isCritical) {
             error_log($message);

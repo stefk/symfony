@@ -166,6 +166,8 @@ class BinaryFileResponse extends Response
             $this->setProtocolVersion('1.1');
         }
 
+        $this->ensureIEOverSSLCompatibility($request);
+
         $this->offset = 0;
         $this->maxlen = -1;
 
@@ -175,7 +177,7 @@ class BinaryFileResponse extends Response
             $path = $this->file->getRealPath();
             if (strtolower($type) == 'x-accel-redirect') {
                 // Do X-Accel-Mapping substitutions.
-                foreach (explode(',', $request->headers->get('X-Accel-Mapping', ''))  as $mapping) {
+                foreach (explode(',', $request->headers->get('X-Accel-Mapping', '')) as $mapping) {
                     $mapping = explode('=', $mapping, 2);
 
                     if (2 == count($mapping)) {
@@ -183,7 +185,7 @@ class BinaryFileResponse extends Response
                         $pathPrefix = trim($mapping[1]);
 
                         if (substr($path, 0, strlen($pathPrefix)) == $pathPrefix) {
-                            $path = $location . substr($path, strlen($pathPrefix));
+                            $path = $location.substr($path, strlen($pathPrefix));
                             break;
                         }
                     }
@@ -195,19 +197,27 @@ class BinaryFileResponse extends Response
             // Process the range headers.
             if (!$request->headers->has('If-Range') || $this->getEtag() == $request->headers->get('If-Range')) {
                 $range = $request->headers->get('Range');
+                $fileSize = $this->file->getSize();
 
-                list($start, $end) = array_map('intval', explode('-', substr($range, 6), 2)) + array(0);
+                list($start, $end) = explode('-', substr($range, 6), 2) + array(0);
 
-                if ('' !== $end) {
-                    $this->maxlen = $end - $start;
+                $end = ('' === $end) ? $fileSize - 1 : (int) $end;
+
+                if ('' === $start) {
+                    $start = $fileSize - $end;
+                    $end = $fileSize - 1;
                 } else {
-                    $end = $this->file->getSize() - 1;
+                    $start = (int) $start;
                 }
 
+                $start = max($start, 0);
+                $end = min($end, $fileSize - 1);
+
+                $this->maxlen = $end < $fileSize ? $end - $start + 1 : -1;
                 $this->offset = $start;
 
                 $this->setStatusCode(206);
-                $this->headers->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $this->file->getSize()));
+                $this->headers->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $fileSize));
             }
         }
 

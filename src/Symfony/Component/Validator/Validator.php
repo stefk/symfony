@@ -13,6 +13,7 @@ namespace Symfony\Component\Validator;
 
 use Symfony\Component\Validator\Constraints\Valid;
 use Symfony\Component\Validator\Exception\ValidatorException;
+use Symfony\Component\Translation\TranslatorInterface;
 
 /**
  * Default implementation of {@link ValidatorInterface}.
@@ -33,6 +34,16 @@ class Validator implements ValidatorInterface
     private $validatorFactory;
 
     /**
+     * @var TranslatorInterface
+     */
+    private $translator;
+
+    /**
+     * @var null|string
+     */
+    private $translationDomain;
+
+    /**
      * @var array
      */
     private $objectInitializers;
@@ -40,11 +51,15 @@ class Validator implements ValidatorInterface
     public function __construct(
         MetadataFactoryInterface $metadataFactory,
         ConstraintValidatorFactoryInterface $validatorFactory,
+        TranslatorInterface $translator,
+        $translationDomain = 'validators',
         array $objectInitializers = array()
     )
     {
         $this->metadataFactory = $metadataFactory;
         $this->validatorFactory = $validatorFactory;
+        $this->translator = $translator;
+        $this->translationDomain = $translationDomain;
         $this->objectInitializers = $objectInitializers;
     }
 
@@ -72,7 +87,7 @@ class Validator implements ValidatorInterface
         $visitor = $this->createVisitor($value);
 
         foreach ($this->resolveGroups($groups) as $group) {
-            $visitor->validate($value, $group, '');
+            $visitor->validate($value, $group, '', $traverse, $deep);
         }
 
         return $visitor->getViolations();
@@ -90,13 +105,17 @@ class Validator implements ValidatorInterface
 
         if (!$metadata instanceof PropertyMetadataContainerInterface) {
             $valueAsString = is_scalar($containingValue)
-                ? '"' . $containingValue . '"'
-                : 'the value of type ' . gettype($containingValue);
+                ? '"'.$containingValue.'"'
+                : 'the value of type '.gettype($containingValue);
 
-            throw new ValidatorException(sprintf('The metadata for ' . $valueAsString . ' does not support properties.'));
+            throw new ValidatorException(sprintf('The metadata for '.$valueAsString.' does not support properties.'));
         }
 
         foreach ($this->resolveGroups($groups) as $group) {
+            if (!$metadata->hasPropertyMetadata($property)) {
+                continue;
+            }
+
             foreach ($metadata->getPropertyMetadata($property) as $propMeta) {
                 $propMeta->accept($visitor, $propMeta->getPropertyValue($containingValue), $group, $property);
             }
@@ -117,13 +136,17 @@ class Validator implements ValidatorInterface
 
         if (!$metadata instanceof PropertyMetadataContainerInterface) {
             $valueAsString = is_scalar($containingValue)
-                ? '"' . $containingValue . '"'
-                : 'the value of type ' . gettype($containingValue);
+                ? '"'.$containingValue.'"'
+                : 'the value of type '.gettype($containingValue);
 
-            throw new ValidatorException(sprintf('The metadata for ' . $valueAsString . ' does not support properties.'));
+            throw new ValidatorException(sprintf('The metadata for '.$valueAsString.' does not support properties.'));
         }
 
         foreach ($this->resolveGroups($groups) as $group) {
+            if (!$metadata->hasPropertyMetadata($property)) {
+                continue;
+            }
+
             foreach ($metadata->getPropertyMetadata($property) as $propMeta) {
                 $propMeta->accept($visitor, $value, $group, $property);
             }
@@ -137,7 +160,7 @@ class Validator implements ValidatorInterface
      */
     public function validateValue($value, $constraints, $groups = null)
     {
-        $context = new ExecutionContext($this->createVisitor(null));
+        $context = new ExecutionContext($this->createVisitor($value), $this->translator, $this->translationDomain);
 
         $constraints = is_array($constraints) ? $constraints : array($constraints);
 
@@ -163,7 +186,7 @@ class Validator implements ValidatorInterface
                 );
             }
 
-            $context->validateValue($value, $constraint, $groups);
+            $context->validateValue($value, $constraint, '', $groups);
         }
 
         return $context->getViolations();
@@ -176,7 +199,14 @@ class Validator implements ValidatorInterface
      */
     private function createVisitor($root)
     {
-        return new ValidationVisitor($root, $this->metadataFactory, $this->validatorFactory, $this->objectInitializers);
+        return new ValidationVisitor(
+            $root,
+            $this->metadataFactory,
+            $this->validatorFactory,
+            $this->translator,
+            $this->translationDomain,
+            $this->objectInitializers
+        );
     }
 
     /**

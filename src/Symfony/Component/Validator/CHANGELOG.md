@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+2.3.0
+-----
+
+ * added the ISBN, ISSN, and IBAN validators
+ * copied the constraints `Optional` and `Required` to the
+   `Symfony\Component\Validator\Constraints\` namespace and deprecated the original
+   classes.
+ * added comparison validators (EqualTo, NotEqualTo, LessThan, LessThanOrEqualTo, GreaterThan, GreaterThanOrEqualTo, IdenticalTo, NotIdenticalTo)
+
 2.2.0
 -----
 
@@ -28,6 +37,17 @@ CHANGELOG
    As of Symfony 2.3, this method will be typed against `MetadataFactoryInterface` instead.
  * [BC BREAK] the switches `traverse` and `deep` in the `Valid` constraint and in `GraphWalker::walkReference`
    are ignored for arrays now. Arrays are always traversed recursively.
+ * added dependency to Translation component
+ * violation messages are now translated with a TranslatorInterface implementation
+ * [BC BREAK] inserted argument `$message` in the constructor of `ConstraintViolation`
+ * [BC BREAK] inserted arguments `$translator` and `$translationDomain` in the constructor of `ExecutionContext`
+ * [BC BREAK] inserted arguments `$translator` and `$translationDomain` in the constructor of `GraphWalker`
+ * [BC BREAK] inserted arguments `$translator` and `$translationDomain` in the constructor of `ValidationVisitor`
+ * [BC BREAK] inserted arguments `$translator` and `$translationDomain` in the constructor of `Validator`
+ * [BC BREAK] added `setTranslator()` and `setTranslationDomain()` to `ValidatorBuilderInterface`
+ * improved the Validator to support pluralized messages by default
+ * [BC BREAK] changed the source of all pluralized messages in the translation files to the pluralized version
+ * added ExceptionInterface, BadMethodCallException and InvalidArgumentException
 
 2.1.0
 -----

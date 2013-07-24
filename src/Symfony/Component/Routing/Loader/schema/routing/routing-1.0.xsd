@@ -26,7 +26,7 @@
 
   <xsd:group name="configs">
     <xsd:choice>
-      <xsd:element name="default" type="element" />
+      <xsd:element name="default" nillable="true" type="element" />
       <xsd:element name="requirement" type="element" />
       <xsd:element name="option" type="element" />
     </xsd:choice>
@@ -36,8 +36,11 @@
     <xsd:group ref="configs" minOccurs="0" maxOccurs="unbounded" />
 
     <xsd:attribute name="id" type="xsd:string" use="required" />
-    <xsd:attribute name="pattern" type="xsd:string" use="required" />
-    <xsd:attribute name="hostname-pattern" type="xsd:string" />
+    <xsd:attribute name="path" type="xsd:string" />
+    <xsd:attribute name="pattern" type="xsd:string" />
+    <xsd:attribute name="host" type="xsd:string" />
+    <xsd:attribute name="schemes" type="xsd:string" />
+    <xsd:attribute name="methods" type="xsd:string" />
   </xsd:complexType>
 
   <xsd:complexType name="import">
@@ -46,7 +49,9 @@
     <xsd:attribute name="resource" type="xsd:string" use="required" />
     <xsd:attribute name="type" type="xsd:string" />
     <xsd:attribute name="prefix" type="xsd:string" />
-    <xsd:attribute name="hostname-pattern" type="xsd:string" />
+    <xsd:attribute name="host" type="xsd:string" />
+    <xsd:attribute name="schemes" type="xsd:string" />
+    <xsd:attribute name="methods" type="xsd:string" />
   </xsd:complexType>
 
   <xsd:complexType name="element">

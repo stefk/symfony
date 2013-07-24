@@ -85,7 +85,7 @@ class Client extends BaseClient
     }
 
     /**
-     * Makes a request.
+     * {@inheritdoc}
      *
      * @param Request $request A Request instance
      *
@@ -108,11 +108,15 @@ class Client extends BaseClient
             $this->kernel->getContainer()->get('profiler')->enable();
         }
 
-        return $this->kernel->handle($request);
+        return parent::doRequest($request);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @param Request $request A Request instance
+     *
+     * @return Response A Response instance
      */
     protected function doRequestInProcess($request)
     {

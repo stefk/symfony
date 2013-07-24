@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Profiler\ProfilerStorageInterface;
 use Symfony\Component\HttpKernel\DataCollector\DataCollectorInterface;
-use Symfony\Component\HttpKernel\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Profiler.
@@ -110,7 +110,7 @@ class Profiler
     public function saveProfile(Profile $profile)
     {
         if (!($ret = $this->storage->write($profile)) && null !== $this->logger) {
-            $this->logger->warn('Unable to store the profiler information.');
+            $this->logger->warning('Unable to store the profiler information.');
         }
 
         return $ret;
@@ -204,7 +204,7 @@ class Profiler
             return;
         }
 
-        $profile = new Profile(uniqid());
+        $profile = new Profile(substr(sha1(uniqid(mt_rand(), true)), 0, 6));
         $profile->setTime(time());
         $profile->setUrl($request->getUri());
         $profile->setIp($request->getClientIp());

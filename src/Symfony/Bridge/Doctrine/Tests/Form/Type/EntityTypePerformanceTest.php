@@ -11,8 +11,7 @@
 
 namespace Symfony\Bridge\Doctrine\Tests\Form\Type;
 
-use Symfony\Component\Form\Tests\FormPerformanceTestCase;
-use Doctrine\ORM\EntityRepository;
+use Symfony\Component\Form\Test\FormPerformanceTestCase;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIdentEntity;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bridge\Doctrine\Tests\DoctrineOrmTestCase;
@@ -34,9 +33,11 @@ class EntityTypePerformanceTest extends FormPerformanceTestCase
     protected function getExtensions()
     {
         $manager = $this->getMock('Doctrine\Common\Persistence\ManagerRegistry');
+
         $manager->expects($this->any())
             ->method('getManager')
             ->will($this->returnValue($this->em));
+
         $manager->expects($this->any())
             ->method('getManagerForClass')
             ->will($this->returnValue($this->em));
@@ -117,29 +118,9 @@ class EntityTypePerformanceTest extends FormPerformanceTestCase
     /**
      * @group benchmark
      */
-    public function testCollapsedEntityFieldWithQueryBuilder()
-    {
-        $this->setMaxRunningTime(1);
-
-        for ($i = 0; $i < 40; ++$i) {
-            $form = $this->factory->create('entity', null, array(
-                'class' => self::ENTITY_CLASS,
-                'query_builder' => function (EntityRepository $repo) {
-                    return $repo->createQueryBuilder('e')->addOrderBy('e.id', 'DESC');
-                }
-            ));
-
-            // force loading of the choice list
-            $form->createView();
-        }
-    }
-
-    /**
-     * @group benchmark
-     */
     public function testCollapsedEntityFieldWithChoices()
     {
-        $choices = $this->em->createQuery('SELECT c FROM ' . self::ENTITY_CLASS . ' c')->getResult();
+        $choices = $this->em->createQuery('SELECT c FROM '.self::ENTITY_CLASS.' c')->getResult();
         $this->setMaxRunningTime(1);
 
         for ($i = 0; $i < 40; ++$i) {
@@ -158,7 +139,7 @@ class EntityTypePerformanceTest extends FormPerformanceTestCase
      */
     public function testCollapsedEntityFieldWithPreferredChoices()
     {
-        $choices = $this->em->createQuery('SELECT c FROM ' . self::ENTITY_CLASS . ' c')->getResult();
+        $choices = $this->em->createQuery('SELECT c FROM '.self::ENTITY_CLASS.' c')->getResult();
         $this->setMaxRunningTime(1);
 
         for ($i = 0; $i < 40; ++$i) {

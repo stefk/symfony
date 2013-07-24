@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Symfony\Component\Routing\Tests\Matcher\Dumper;
 
 use Symfony\Component\Routing\Route;
@@ -105,7 +114,7 @@ EOF;
                 $string .= sprintf("%s|-coll %s\n", $prefix, $route->getPrefix());
                 $string .= $this->collectionToString($route, $prefix.'| ');
             } else {
-                $string .= sprintf("%s|-route %s %s\n", $prefix, $route->getName(), $route->getRoute()->getPattern());
+                $string .= sprintf("%s|-route %s %s\n", $prefix, $route->getName(), $route->getRoute()->getPath());
             }
         }
 

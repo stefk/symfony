@@ -12,6 +12,7 @@
 namespace Symfony\Bridge\Doctrine\Tests\Validator\Constraints;
 
 use Symfony\Bridge\Doctrine\Tests\DoctrineOrmTestCase;
+use Symfony\Component\Validator\DefaultTranslator;
 use Symfony\Component\Validator\Tests\Fixtures\FakeMetadataFactory;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\SingleIdentEntity;
 use Symfony\Bridge\Doctrine\Tests\Fixtures\DoubleIdentEntity;
@@ -132,7 +133,7 @@ class UniqueValidatorTest extends DoctrineOrmTestCase
         $metadataFactory->addMetadata($metadata);
         $validatorFactory = $this->createValidatorFactory($uniqueValidator);
 
-        return new Validator($metadataFactory, $validatorFactory);
+        return new Validator($metadataFactory, $validatorFactory, new DefaultTranslator());
     }
 
     private function createSchema($em)
@@ -283,6 +284,32 @@ class UniqueValidatorTest extends DoctrineOrmTestCase
 
         $violationsList = $validator->validate($entity1);
         $this->assertEquals(0, $violationsList->count(), 'Violation is using custom repository method.');
+    }
+
+    public function testValidateUniquenessWithUnrewoundArray()
+    {
+        $entity = new SingleIdentEntity(1, 'foo');
+
+        $entityManagerName = 'foo';
+        $repository = $this->createRepositoryMock();
+        $repository->expects($this->once())
+            ->method('findByCustom')
+            ->will(
+                $this->returnCallback(function() use ($entity) {
+                    $returnValue = array(
+                        $entity,
+                    );
+                    next($returnValue);
+
+                    return $returnValue;
+                })
+            )
+        ;
+        $em = $this->createEntityManagerMock($repository);
+        $validator = $this->createValidator($entityManagerName, $em, null, array(), null, 'findByCustom');
+
+        $violationsList = $validator->validate($entity);
+        $this->assertCount(0, $violationsList, 'Violation is using unrewound array as return value in the repository method.');
     }
 
     /**

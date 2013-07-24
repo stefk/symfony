@@ -21,7 +21,7 @@ use Symfony\Component\Validator\Mapping\Cache\CacheInterface;
  *
  * @author Bernhard Schussek <bschussek@gmail.com>
  */
-class ClassMetadataFactory implements ClassMetadataFactoryInterface, MetadataFactoryInterface
+class ClassMetadataFactory implements MetadataFactoryInterface
 {
     /**
      * The loader for loading the class metadata
@@ -49,7 +49,7 @@ class ClassMetadataFactory implements ClassMetadataFactoryInterface, MetadataFac
     public function getMetadataFor($value)
     {
         if (!is_object($value) && !is_string($value)) {
-            throw new NoSuchMetadataException('Cannot create metadata for non-objects. Got: ' . gettype($value));
+            throw new NoSuchMetadataException(sprintf('Cannot create metadata for non-objects. Got: %s', gettype($value)));
         }
 
         $class = ltrim(is_object($value) ? get_class($value) : $value, '\\');
@@ -63,27 +63,23 @@ class ClassMetadataFactory implements ClassMetadataFactoryInterface, MetadataFac
         }
 
         if (!class_exists($class) && !interface_exists($class)) {
-            throw new NoSuchMetadataException('The class or interface "' . $class . '" does not exist.');
+            throw new NoSuchMetadataException(sprintf('The class or interface "%s" does not exist.', $class));
         }
 
         $metadata = new ClassMetadata($class);
 
         // Include constraints from the parent class
         if ($parent = $metadata->getReflectionClass()->getParentClass()) {
-            set_error_handler(array($this, 'handleBC'));
-            $metadata->mergeConstraints($this->getClassMetadata($parent->name));
-            restore_error_handler();
+            $metadata->mergeConstraints($this->getMetadataFor($parent->name));
         }
 
         // Include constraints from all implemented interfaces
-        set_error_handler(array($this, 'handleBC'));
         foreach ($metadata->getReflectionClass()->getInterfaces() as $interface) {
             if ('Symfony\Component\Validator\GroupSequenceProviderInterface' === $interface->name) {
                 continue;
             }
-            $metadata->mergeConstraints($this->getClassMetadata($interface->name));
+            $metadata->mergeConstraints($this->getMetadataFor($interface->name));
         }
-        restore_error_handler();
 
         if (null !== $this->loader) {
             $this->loader->loadClassMetadata($metadata);
@@ -108,31 +104,6 @@ class ClassMetadataFactory implements ClassMetadataFactoryInterface, MetadataFac
         $class = ltrim(is_object($value) ? get_class($value) : $value, '\\');
 
         if (class_exists($class) || interface_exists($class)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @deprecated Deprecated since version 2.2, to be removed in 2.3. Use
-     *             {@link getMetadataFor} instead.
-     */
-    public function getClassMetadata($class)
-    {
-        trigger_error('getClassMetadata() is deprecated since version 2.2 and will be removed in 2.3. Use getMetadataFor() instead.', E_USER_DEPRECATED);
-
-        return $this->getMetadataFor($class);
-    }
-
-    /**
-     * @deprecated This is used to keep BC until deprecated methods are removed
-     */
-    public function handleBC($errorNumber, $message, $file, $line, $context)
-    {
-        if ($errorNumber & E_USER_DEPRECATED) {
             return true;
         }
 

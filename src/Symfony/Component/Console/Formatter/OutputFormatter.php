@@ -23,7 +23,7 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * The pattern to phrase the format.
      */
-    const FORMAT_PATTERN = '#(\\\\?)<(/?)([a-z][a-z0-9_=;-]+)?>((?:(?!\\\\?<).)*)#is';
+    const FORMAT_PATTERN = '#(\\\\?)<(/?)([a-z][a-z0-9_=;-]+)?>((?: [^<\\\\]+ | (?!<(?:/?[a-z]|/>)). | .(?<=\\\\<) )*)#isx';
 
     private $decorated;
     private $styles = array();
@@ -130,7 +130,7 @@ class OutputFormatter implements OutputFormatterInterface
     public function getStyle($name)
     {
         if (!$this->hasStyle($name)) {
-            throw new \InvalidArgumentException('Undefined style: '.$name);
+            throw new \InvalidArgumentException(sprintf('Undefined style: %s', $name));
         }
 
         return $this->styles[strtolower($name)];
@@ -239,7 +239,7 @@ class OutputFormatter implements OutputFormatterInterface
      *
      * @param string $text Input text
      *
-     * @return string string Styled text
+     * @return string Styled text
      */
     private function applyCurrentStyle($text)
     {

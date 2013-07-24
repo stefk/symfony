@@ -13,6 +13,7 @@ namespace Symfony\Component\Validator;
 
 use Symfony\Component\Validator\Exception\NoSuchMetadataException;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
+use Symfony\Component\Translation\TranslatorInterface;
 
 /**
  * Default implementation of {@link ValidationVisitorInterface} and
@@ -38,6 +39,16 @@ class ValidationVisitor implements ValidationVisitorInterface, GlobalExecutionCo
     private $validatorFactory;
 
     /**
+     * @var TranslatorInterface
+     */
+    private $translator;
+
+    /**
+     * @var null|string
+     */
+    private $translationDomain;
+
+    /**
      * @var array
      */
     private $objectInitializers;
@@ -53,23 +64,18 @@ class ValidationVisitor implements ValidationVisitorInterface, GlobalExecutionCo
     private $validatedObjects = array();
 
     /**
-     * @var GraphWalker
-     *
-     * @deprecated Deprecated since version 2.2, to be removed in 2.3.
-     */
-    private $graphWalker;
-
-    /**
      * Creates a new validation visitor.
      *
      * @param mixed                               $root               The value passed to the validator.
      * @param MetadataFactoryInterface            $metadataFactory    The factory for obtaining metadata instances.
      * @param ConstraintValidatorFactoryInterface $validatorFactory   The factory for creating constraint validators.
+     * @param TranslatorInterface                 $translator         The translator for translating violation messages.
+     * @param string|null                         $translationDomain  The domain of the translation messages.
      * @param ObjectInitializerInterface[]        $objectInitializers The initializers for preparing objects before validation.
      *
      * @throws UnexpectedTypeException If any of the object initializers is not an instance of ObjectInitializerInterface
      */
-    public function __construct($root, MetadataFactoryInterface $metadataFactory, ConstraintValidatorFactoryInterface $validatorFactory, array $objectInitializers = array())
+    public function __construct($root, MetadataFactoryInterface $metadataFactory, ConstraintValidatorFactoryInterface $validatorFactory, TranslatorInterface $translator, $translationDomain = null, array $objectInitializers = array())
     {
         foreach ($objectInitializers as $initializer) {
             if (!$initializer instanceof ObjectInitializerInterface) {
@@ -80,6 +86,8 @@ class ValidationVisitor implements ValidationVisitorInterface, GlobalExecutionCo
         $this->root = $root;
         $this->metadataFactory = $metadataFactory;
         $this->validatorFactory = $validatorFactory;
+        $this->translator = $translator;
+        $this->translationDomain = $translationDomain;
         $this->objectInitializers = $objectInitializers;
         $this->violations = new ConstraintViolationList();
     }
@@ -91,6 +99,8 @@ class ValidationVisitor implements ValidationVisitorInterface, GlobalExecutionCo
     {
         $context = new ExecutionContext(
             $this,
+            $this->translator,
+            $this->translationDomain,
             $metadata,
             $value,
             $group,
@@ -151,20 +161,6 @@ class ValidationVisitor implements ValidationVisitorInterface, GlobalExecutionCo
         } else {
             $this->metadataFactory->getMetadataFor($value)->accept($this, $value, $group, $propertyPath);
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getGraphWalker()
-    {
-        trigger_error('getGraphWalker() is deprecated since version 2.2 and will be removed in 2.3.', E_USER_DEPRECATED);
-
-        if (null === $this->graphWalker) {
-            $this->graphWalker = new GraphWalker($this, $this->metadataFactory, $this->validatedObjects);
-        }
-
-        return $this->graphWalker;
     }
 
     /**
